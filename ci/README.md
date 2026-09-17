@@ -72,3 +72,55 @@ web 的 API 基址是 `import.meta.env.VITE_API_BASE_URL ?? ""`（见 `src/api/c
 3. Jenkins 建 job（SCM 指向新仓、挂 `gitea-scm`、GenericTrigger 用同一个 `platform-webhook-token`）
 4. 新仓挂 webhook
 5. GitOps 仓里建好被 sed 的那份清单（`image:` 那一行必须先存在）
+
+---
+
+## 首跑实测踩到的三个坑（都是"不报错"的那一类）
+
+### 坑 1：Pod 级 `securityContext` 会被 API server **静默裁掉**
+
+`allowPrivilegeEscalation` 和 `capabilities` 是**容器级** `SecurityContext` 的字段，
+**不是** `PodSecurityContext` 的字段。第一版 `web.yaml` 把它们写在了 Pod 级：
+
+- Kubernetes **不报错**，只是把它们裁掉 → 实际对象里这些字段是空的
+- 于是「清单里有、集群里没有」→ **ArgoCD 永远 `OutOfSync`**，而 `health` 还是 `Healthy`
+
+诊断方式：把接口返回的实测对象打出来对照，而不是盯着 YAML 读。
+
+```
+pod securityContext     : {全 None}          ← 被裁掉了
+container web secCtx    : {read_only_root_filesystem: True}
+```
+
+**对照**：api 的同一组字段写在容器级，所以它一直 `Synced`。位置不同，结果不同，而且不报错。
+
+### 坑 2：`drop: ["ALL"]` 会把 nginx 打死
+
+照抄 api 的「drop 全部能力、只留 `NET_BIND_SERVICE`」，nginx 起不来：
+
+```
+nginx: [emerg] chown("/var/cache/nginx/client_temp", 101) failed (1: Operation not permitted)
+```
+
+nginx master 以 root 起、再把 worker 降到 `uid 101`，这个过程需要 `CHOWN`。**能力集合要按进程实际行为反推**：
+
+| 能力 | 谁需要它 |
+|---|---|
+| `CHOWN` | master 给缓存目录改属主（上面那条报错） |
+| `SETUID` / `SETGID` | 把 worker 降权到 nginx 用户 |
+| `DAC_OVERRIDE` | 越过目录权限写缓存/日志 |
+| `NET_BIND_SERVICE` | 绑 80 这个特权端口 |
+
+**收益不在"留了哪几个"，而在"丢掉了哪几个"**：`NET_RAW` / `MKNOD` / `SYS_CHROOT` / `SETPCAP` / `SETFCAP` / `AUDIT_WRITE` / `FOWNER` 这些被丢掉了。
+
+### 坑 3：清单仓的本地快照会把 CI 写回的 tag 退回旧值
+
+`image:` 那一行归 CI 管（`sed` 改写 + 提交）。而本地那份清单副本是**快照**，
+时间一长必然落后。用"整文件覆盖"的方式推送时，会把 CI 的 bump **回退**成旧 tag。
+
+本项目实测发生过一次：`api.yaml` 的 tag 被从 CI 写回值 `a737d41` 退回占位值 `36e740c`，
+后果是 ArgoCD 从此 `OutOfSync`、新 Pod 拉不到镜像（旧 Pod 因 `maxUnavailable: 0` 还在扛）。
+
+**修法**：推送前做一次**逐行合并** —— 远端已有的 `image:` 行以远端为准，本地只提供其余内容。
+详见 `_scripts/push_gitops.py` 的步骤 2。
+
