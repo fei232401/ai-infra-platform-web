@@ -13,7 +13,7 @@ RUN npm ci --no-audit --no-fund
 COPY tsconfig.json vite.config.ts index.html ./
 COPY src ./src
 
-RUN npm run build
+RUN VITE_BUILD_VERSION=${GIT_SHA} npm run build
 
 FROM nginx:1.27-alpine
 

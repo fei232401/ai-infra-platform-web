@@ -49,6 +49,9 @@ export function Topbar() {
             )}
           </span>
         </span>
+        <span className="faint" title="构建期注入的版本号（git short sha）">
+          {__BUILD_VERSION__}
+        </span>
         <button
           type="button"
           className="btn btn--sm"
