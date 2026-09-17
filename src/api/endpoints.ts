@@ -28,6 +28,8 @@ import type {
   RequestLogDetailOut,
   RequestLogIn,
   RequestLogOut,
+  RouteIn,
+  RouteOut,
   SummaryOut,
   SummaryQuery,
 } from "./types";
@@ -137,6 +139,10 @@ export const api = {
       request<ApiKeyOut>(`/api/v1/keys/${keyId}`, { signal }),
     revoke: (keyId: number) =>
       request<ApiKeyOut>(`/api/v1/keys/${keyId}/revoke`, { method: "POST" }),
+  },
+
+  inference: {
+    route: (body: RouteIn) => request<RouteOut>("/v1/route", { method: "POST", body, timeoutMs: 300000 }),
   },
 };
 

@@ -139,3 +139,36 @@ export const BACKEND_STATE_VALUES: readonly BackendStateValue[] = [
   "draining",
   "disabled",
 ];
+
+export type RouteIn = {
+  model_name: string;
+  prompt: string;
+  policy?: string;
+  max_tokens?: number;
+  engine_models?: Record<string, string>;
+};
+
+export type RouteBackendOut = {
+  id: number;
+  name: string;
+  engine: string;
+  url: string;
+};
+
+export type RouteDecisionOut = {
+  policy: string;
+  candidate_ids: number[];
+  chosen_id: number | null;
+  score_snapshot: { ranked: CandidateOut[] };
+  fallback_reason: string | null;
+};
+
+export type RouteOut = {
+  request_id: string | null;
+  recorded: boolean;
+  backend: RouteBackendOut;
+  decision: RouteDecisionOut;
+  output: string;
+  usage: { prompt_tokens: number | null; completion_tokens: number | null };
+  timings: { total_ms: number; engine_model: string };
+};

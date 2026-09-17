@@ -6,6 +6,7 @@ import { Panel } from "./components/Panel";
 import { NAV_GROUPS } from "./lib/navigation";
 import { BackendDetail } from "./pages/BackendDetail";
 import { Backends } from "./pages/Backends";
+import { Inference } from "./pages/Inference";
 import { Keys } from "./pages/Keys";
 import { Overview } from "./pages/Overview";
 import { RequestDetail } from "./pages/RequestDetail";
@@ -45,6 +46,7 @@ export function App() {
           <Route path="/backends/:backendId" element={<BackendDetail />} />
           <Route path="/keys" element={<Keys />} />
           <Route path="/routing" element={<Routing />} />
+          <Route path="/inference" element={<Inference />} />
           <Route path="/requests" element={<Requests />} />
           <Route path="/requests/:requestId" element={<RequestDetail />} />
           <Route path="*" element={<NotFound />} />

@@ -1,4 +1,4 @@
-import { KeyRound, LayoutDashboard, Route, ScrollText, Server } from "lucide-react";
+import { KeyRound, LayoutDashboard, Play, Route, ScrollText, Server } from "lucide-react";
 import type { ElementType } from "react";
 
 export type NavItem = {
@@ -26,7 +26,10 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   },
   {
     label: "调度",
-    items: [{ to: "/routing", label: "候选打分", icon: Route }],
+    items: [
+      { to: "/routing", label: "候选打分", icon: Route },
+      { to: "/inference", label: "发起推理", icon: Play },
+    ],
   },
   {
     label: "追溯",
@@ -38,6 +41,7 @@ const STATIC_TITLES: Record<string, string> = {
   "/overview": "总览",
   "/backends": "后端实例",
   "/routing": "候选打分",
+  "/inference": "发起推理",
   "/requests": "请求流水",
   "/keys": "访问密钥",
 };
