@@ -1,3 +1,5 @@
+import { getApiKey } from "./apiKey";
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const DEFAULT_TIMEOUT_MS = 15000;
 
@@ -80,9 +82,14 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   signal?.addEventListener("abort", forwardAbort);
 
   try {
+    const headers: Record<string, string> = {};
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    const apiKey = getApiKey();
+    if (apiKey.length > 0) headers["X-API-Key"] = apiKey;
+
     const response = await fetch(`${BASE_URL}${path}${buildQuery(query)}`, {
       method,
-      headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+      headers: Object.keys(headers).length > 0 ? headers : undefined,
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal,
     });

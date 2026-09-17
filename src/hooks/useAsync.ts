@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiError } from "../api/client";
+import { useApiKey } from "./useApiKey";
 
 export type AsyncState<T> = {
   data: T | null;
@@ -29,6 +30,8 @@ export function useAsync<T>(
 
   const loaderRef = useRef(loader);
   loaderRef.current = loader;
+
+  const apiKey = useApiKey();
 
   const reload = useCallback(() => {
     setNonce((current) => current + 1);
@@ -60,7 +63,7 @@ export function useAsync<T>(
       active = false;
       controller.abort();
     };
-  }, [...deps, nonce]);
+  }, [...deps, nonce, apiKey]);
 
   return { data, error, loading, reload };
 }

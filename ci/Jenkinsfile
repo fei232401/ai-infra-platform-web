@@ -162,12 +162,13 @@ spec:
       }
     }
 
-    stage('Typecheck') {
+    stage('Verify') {
       when { expression { env.SHOULD_BUILD == 'true' } }
       steps {
-        // 前端 CI 的「测试」不是跑用例，而是**类型检查**：tsc --noEmit 会把
-        // 类型错误当编译错误抛出来。它比 Docker 构建快得多，失败信号也更干净。
-        // 注意这里装的 node_modules 只有本 stage 用；镜像里由 Dockerfile 自己再装一次，
+        // 前端 CI 的「测试」= 类型检查 + 单元测试（Vitest）。
+        // 顺序有意为之：tsc 先把"编译不过"挡在最前面（信号最干净、最快），
+        // 再跑单元测试。当前覆盖 `request` 的请求头组装/错误归一与 API Key 的存取脱敏。
+        // 这里装的 node_modules 只给本 stage 用；镜像里由 Dockerfile 自己再装一次，
         // 靠 .dockerignore 把 node_modules/dist 挡在构建上下文之外。
         container('node') {
           sh '''
@@ -175,7 +176,8 @@ spec:
             npm config set registry ${NPM_REGISTRY}
             npm ci --no-audit --no-fund
             npm run typecheck
-            echo "类型检查通过"
+            npm test
+            echo "类型检查与单元测试均通过"
           '''
         }
       }
