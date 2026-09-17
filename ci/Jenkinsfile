@@ -43,7 +43,7 @@ spec:
         cpu: 1000m
         memory: 2Gi
   - name: node
-    image: node:20-slim
+    image: node:22-slim
     command: ["sleep"]
     args: ["infinity"]
     resources:
